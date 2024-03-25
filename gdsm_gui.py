@@ -2,7 +2,6 @@ import os
 import shutil
 import sys
 import time
-from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QListWidget, QLabel, QMainWindow, QLineEdit
 
 # variables needed for the backup/import process 
@@ -11,15 +10,47 @@ default_save_location = os.path.expanduser("~/AppData/Local/GeometryDash/")
 save_location = ""
 save_choice = ""
 
+class SuccessWindow(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
+
+    def initUI(self):
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+
+        self.namelabel = QLabel("The task was a success! \nPress the Confirm button to restart the application.")
+        layout.addWidget(self.namelabel)
+
+        self.confirmbtn = QPushButton(self)
+        self.confirmbtn.setText("Confirm")
+        self.confirmbtn.clicked.connect(self.restartpr)
+        layout.addWidget(self.confirmbtn)
+
+        self.center()
+
+    def center(self):
+        frameGm = self.frameGeometry()
+        screen = QApplication.desktop().screenNumber(QApplication.desktop().cursor().pos())
+        centerPoint = QApplication.desktop().screenGeometry(screen).center()
+        frameGm.moveCenter(centerPoint)
+        self.move(frameGm.topLeft())
+
+    def restartpr(self):
+        os.execl(sys.executable, sys.executable, *sys.argv)
+
 class BackupWindow(QWidget):
     def __init__(self):
         super().__init__()
+        self.initUI()
+
+    def initUI(self):
         layout = QVBoxLayout()
         self.setLayout(layout)
         self.savedetectlabel = QLabel(self)
 
         if os.path.exists(default_save_location):
-            self.savedetectlabel.setText("Local save is detected. \nYou don't have to input your custom path.")
+            self.savedetectlabel.setText("Local save is detected. \n" + default_save_location + "\nYou don't have to input your custom path.")
         else:
             self.savedetectlabel.setText("Local save is not detected. \nWhat path are your saves in?")
             self.customsavepath = QLineEdit(self)
@@ -36,6 +67,8 @@ class BackupWindow(QWidget):
         layout.addWidget(self.namelabel)
         layout.addWidget(self.savname)
         layout.addWidget(self.confirmbtn)
+
+        self.center()
 
     def backupsave(self):
         if os.path.exists(default_save_location):
@@ -58,25 +91,31 @@ class BackupWindow(QWidget):
 
         if os.path.exists( "./backups/" + self.savname.text() + ".gdsave"):
             print("Save has successfully been backed up!") 
-            time.sleep(3)
-            os.execl(sys.executable, sys.executable, *sys.argv) 
+            self.m = SuccessWindow()
+            self.m.show()
         else:
             print("Backup failed to create!")
             time.sleep(3)
             os.execl(sys.executable, sys.executable, *sys.argv) 
 
+    def center(self):
+        frameGm = self.frameGeometry()
+        screen = QApplication.desktop().screenNumber(QApplication.desktop().cursor().pos())
+        centerPoint = QApplication.desktop().screenGeometry(screen).center()
+        frameGm.moveCenter(centerPoint)
+        self.move(frameGm.topLeft())
 
-class MyWindow(QMainWindow):
+
+class MyWindow(QWidget):
     def __init__(self):
         super(MyWindow, self).__init__()
         self.initUI()
 
     def initUI(self):
-        self.widgetwin = QWidget()
         self.hlayout = QHBoxLayout()
         self.vlayout = QVBoxLayout()
 
-        self.widgetwin.setLayout(self.vlayout)
+        self.setLayout(self.vlayout)
 
         self.welcome = QLabel(self)
         self.welcome.setText("Welcome to the Geometry Dash Save File Backup Manager!")
@@ -100,7 +139,8 @@ class MyWindow(QMainWindow):
         self.hlayout.addWidget(self.b1)
         self.hlayout.addWidget(self.b2)
 
-        self.widgetwin.show()
+        self.center()
+        self.show()
 
     def backupbtn(self):
         self.w = BackupWindow()
@@ -108,6 +148,14 @@ class MyWindow(QMainWindow):
     
     def importbtn(self):
         self.b2.setText("Nuh uh")
+
+    def center(self):
+        frameGm = self.frameGeometry()
+        screen = QApplication.desktop().screenNumber(QApplication.desktop().cursor().pos())
+        centerPoint = QApplication.desktop().screenGeometry(screen).center()
+        frameGm.moveCenter(centerPoint)
+        self.move(frameGm.topLeft())
+
 
 
 # pyqt
