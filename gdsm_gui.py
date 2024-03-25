@@ -2,7 +2,8 @@ import os
 import shutil
 import sys
 import time
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QListWidget, QLabel, QMainWindow, QLineEdit
+from PyQt5 import QtCore
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QListWidget, QLabel, QLineEdit,QGroupBox
 
 # variables needed for the backup/import process 
 saves_list = os.listdir("./backups/") 
@@ -10,103 +11,61 @@ default_save_location = os.path.expanduser("~/AppData/Local/GeometryDash/")
 save_location = ""
 save_choice = ""
 
-class SuccessWindow(QWidget):
+class MyWindow(QWidget):
     def __init__(self):
-        super().__init__()
+        super(MyWindow, self).__init__()
         self.initUI()
 
     def initUI(self):
-        layout = QVBoxLayout()
-        self.setLayout(layout)
+        self.hlayout = QHBoxLayout()
+        self.vlayout = QVBoxLayout()
+        savegroupbox = QVBoxLayout()
+        self.setLayout(self.vlayout)
+        self.setFixedWidth(420)
 
-        self.namelabel = QLabel("The task was a success! \nPress the Confirm button to restart the application.")
-        layout.addWidget(self.namelabel)
+        groupbox = QGroupBox("Saves:")
+        groupbox.setLayout(savegroupbox)
 
-        self.confirmbtn = QPushButton(self)
-        self.confirmbtn.setText("Confirm")
-        self.confirmbtn.clicked.connect(self.restartpr)
-        layout.addWidget(self.confirmbtn)
+        self.welcome = QLabel(self)
+        self.welcome.setText("Welcome to the Geometry Dash Save File Manager! \n\nA program that automates backing your CCGameManager and CCLocalLevels up for you in a neat gdsave (zip) file.")
+        self.welcome.setWordWrap(True)
 
-        self.center()
+        self.madeby = QLabel(self)
+        self.madeby.setText("made by sushiwt, 2024     Geometry Dash belongs to RobTop")
+        self.madeby.setAlignment(QtCore.Qt.AlignCenter)
 
-    def center(self):
-        frameGm = self.frameGeometry()
-        screen = QApplication.desktop().screenNumber(QApplication.desktop().cursor().pos())
-        centerPoint = QApplication.desktop().screenGeometry(screen).center()
-        frameGm.moveCenter(centerPoint)
-        self.move(frameGm.topLeft())
+        self.b1 = QPushButton(self)
+        self.b1.setText("Backup Local Save")
+        self.b1.clicked.connect(self.backupbtn)
 
-    def restartpr(self):
-        os.execl(sys.executable, sys.executable, *sys.argv)
-
-class ImportWindow(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.initUI()
-
-    def initUI(self):
-        layout = QVBoxLayout()
-        self.setLayout(layout)
-        self.savedetectlabel = QLabel(self)
-
-        if os.path.exists(default_save_location):
-            self.savedetectlabel.setText("Local save is detected. \n" + default_save_location + "\nYou don't have to input your custom path.")
-        else:
-            self.savedetectlabel.setText("Local save is not detected. \nWhat path are your saves in?")
-            self.customsavepath = QLineEdit(self)
-            layout.addWidget(self.customsavepath)
-
-        self.namelabel = QLabel("What save would you like to import?")
-        self.savname = QLineEdit(self)
-
-        self.confirmbtn = QPushButton(self)
-        self.confirmbtn.setText("Confirm")
-        self.confirmbtn.clicked.connect(self.backupsave)
+        self.b2 = QPushButton(self)
+        self.b2.setText("Import Backup to Game")
+        self.b2.clicked.connect(self.importbtn)
 
         self.listWidget = QListWidget()
         for value in saves_list:
-            self.listWidget.addItem(value)
-        
-        layout.addWidget(self.savedetectlabel)
-        layout.addWidget(self.namelabel)
-        layout.addWidget(self.listWidget)
-        layout.addWidget(self.savname)
-        layout.addWidget(self.confirmbtn)
+            self.listWidget.addItem(value.replace(".gdsave", "", 1))
+
+        self.vlayout.addWidget(self.welcome)
+
+        self.vlayout.addWidget(groupbox)
+        savegroupbox.addWidget(self.listWidget)
+
+        self.vlayout.addLayout(self.hlayout)
+        self.hlayout.addWidget(self.b1)
+        self.hlayout.addWidget(self.b2)
+        self.vlayout.addWidget(self.madeby)
 
         self.center()
+        self.show()
 
-    def backupsave(self):
-        if os.path.exists(default_save_location):
-            save_location = default_save_location
-        else:
-            save_location = self.customsavepath.text()
-
-        shutil.copy("./backups/" + self.savname.text() + ".gdsave", "./cache/")
-        os.rename("./cache/" + self.savname.text() + ".gdsave", "./cache/import.zip")
-
-        os.mkdir("./cache/import") 
-        shutil.unpack_archive("./cache/import.zip", './cache/import', 'zip')  
-
-        if os.path.exists(save_location + "CCGameManager.dat") and os.path.exists(save_location + "CCLocalLevels.dat"):
-            os.remove(save_location + "CCGameManager.dat")
-            os.remove(save_location + "CCLocalLevels.dat")
-        else:
-            print("The files do not exist. Continuing.")
-            time.sleep(2)
-
-        shutil.copy("./cache/import/CCGameManager.dat", save_location)
-        shutil.copy("./cache/import/CCLocalLevels.dat", save_location)
-
-        shutil.rmtree("./cache/import")
-        os.remove("./cache/import.zip")
-
-        if os.path.exists( "./backups/" + self.savname.text() + ".gdsave"):
-            self.m = SuccessWindow()
-            self.m.show()
-        else:
-            print("Backup failed to create!")
-            time.sleep(3)
-            os.execl(sys.executable, sys.executable, *sys.argv) 
+    def backupbtn(self):
+        self.bkupwin = BackupWindow()
+        self.bkupwin.show()
+    
+    def importbtn(self):
+        self.iprtwin = ImportWindow()
+        self.iprtwin.show()
 
     def center(self):
         frameGm = self.frameGeometry()
@@ -114,8 +73,6 @@ class ImportWindow(QWidget):
         centerPoint = QApplication.desktop().screenGeometry(screen).center()
         frameGm.moveCenter(centerPoint)
         self.move(frameGm.topLeft())
-
-
 
 class BackupWindow(QWidget):
     def __init__(self):
@@ -124,6 +81,7 @@ class BackupWindow(QWidget):
 
     def initUI(self):
         layout = QVBoxLayout()
+        altlayout = QHBoxLayout()
         self.setLayout(layout)
         self.savedetectlabel = QLabel(self)
 
@@ -143,8 +101,10 @@ class BackupWindow(QWidget):
         
         layout.addWidget(self.savedetectlabel)
         layout.addWidget(self.namelabel)
-        layout.addWidget(self.savname)
-        layout.addWidget(self.confirmbtn)
+
+        layout.addLayout(altlayout)
+        altlayout.addWidget(self.savname)
+        altlayout.addWidget(self.confirmbtn)
 
         self.center()
 
@@ -183,50 +143,138 @@ class BackupWindow(QWidget):
         frameGm.moveCenter(centerPoint)
         self.move(frameGm.topLeft())
 
-
-class MyWindow(QWidget):
+class ImportWindow(QWidget):
     def __init__(self):
-        super(MyWindow, self).__init__()
+        super().__init__()
         self.initUI()
 
     def initUI(self):
-        self.hlayout = QHBoxLayout()
-        self.vlayout = QVBoxLayout()
+        layout = QVBoxLayout()
+        altlayout = QHBoxLayout()
+        self.setFixedWidth(320)
+        self.setLayout(layout)
+        self.savedetectlabel = QLabel(self)
 
-        self.setLayout(self.vlayout)
+        if os.path.exists(default_save_location):
+            self.savedetectlabel.setText("Local save is detected. \n" + default_save_location + "\nYou don't have to input your custom path.")
+        else:
+            self.savedetectlabel.setText("Local save is not detected. \nWhat path are your saves in?")
+            self.customsavepath = QLineEdit(self)
+            layout.addWidget(self.customsavepath)
 
-        self.welcome = QLabel(self)
-        self.welcome.setText("Welcome to the Geometry Dash Save File Backup Manager!")
+        self.namelabel = QLabel("Note: Make sure that you have backed up your current save already, as this WILL overwrite whatever save the game is using right now. (but just in case, this program will leave out the CCGameManager2 and CCLocalLevels2 dat files.) \n\nWhat save would you like to import?")
+        self.namelabel.setWordWrap(True)
+        self.savname = QLineEdit(self)
 
-        self.b1 = QPushButton(self)
-        self.b1.setText("Backup Local Save")
-        self.b1.clicked.connect(self.backupbtn)
-
-        self.b2 = QPushButton(self)
-        self.b2.setText("Import Backup to Game")
-        self.b2.clicked.connect(self.importbtn)
+        self.confirmbtn = QPushButton(self)
+        self.confirmbtn.setText("Confirm")
+        self.confirmbtn.clicked.connect(self.backupsave)
 
         self.listWidget = QListWidget()
         for value in saves_list:
-            self.listWidget.addItem(value)
+            self.listWidget.addItem(value.replace(".gdsave", "", 1))
+        
+        layout.addWidget(self.savedetectlabel)
+        layout.addWidget(self.namelabel)
+        layout.addWidget(self.listWidget)
 
-        self.vlayout.addWidget(self.welcome)
-        self.vlayout.addWidget(self.listWidget)
-
-        self.vlayout.addLayout(self.hlayout)
-        self.hlayout.addWidget(self.b1)
-        self.hlayout.addWidget(self.b2)
+        layout.addLayout(altlayout)
+        altlayout.addWidget(self.savname)
+        altlayout.addWidget(self.confirmbtn)
 
         self.center()
-        self.show()
 
-    def backupbtn(self):
-        self.bkupwin = BackupWindow()
-        self.bkupwin.show()
-    
-    def importbtn(self):
-        self.iprtwin = ImportWindow()
-        self.iprtwin.show()
+    def backupsave(self):
+        if os.path.exists("./backups/" + self.savname.text() + ".gdsave"):
+            if os.path.exists(default_save_location):
+                save_location = default_save_location
+            else:
+                save_location = self.customsavepath.text()
+
+            shutil.copy("./backups/" + self.savname.text() + ".gdsave", "./cache/")
+            os.rename("./cache/" + self.savname.text() + ".gdsave", "./cache/import.zip")
+
+            os.mkdir("./cache/import") 
+            shutil.unpack_archive("./cache/import.zip", './cache/import', 'zip')  
+
+            if os.path.exists(save_location + "CCGameManager.dat") and os.path.exists(save_location + "CCLocalLevels.dat"):
+                os.remove(save_location + "CCGameManager.dat")
+                os.remove(save_location + "CCLocalLevels.dat")
+            else:
+                print("The files do not exist. Continuing.")
+                time.sleep(2)
+
+            shutil.copy("./cache/import/CCGameManager.dat", save_location)
+            shutil.copy("./cache/import/CCLocalLevels.dat", save_location)
+
+            shutil.rmtree("./cache/import")
+            os.remove("./cache/import.zip")
+
+            if os.path.exists( "./backups/" + self.savname.text() + ".gdsave"):
+                self.m = SuccessWindow()
+                self.m.show()
+            else:
+                print("Backup failed to create!")
+                time.sleep(3)
+                os.execl(sys.executable, sys.executable, *sys.argv) 
+        else:
+            self.fileExists = FileExistsWindow()
+            self.fileExists.show()
+
+    def center(self):
+        frameGm = self.frameGeometry()
+        screen = QApplication.desktop().screenNumber(QApplication.desktop().cursor().pos())
+        centerPoint = QApplication.desktop().screenGeometry(screen).center()
+        frameGm.moveCenter(centerPoint)
+        self.move(frameGm.topLeft())
+
+class SuccessWindow(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
+
+    def initUI(self):
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+
+        self.namelabel = QLabel("The task was a success! \nPress the Confirm button to restart the application.")
+        layout.addWidget(self.namelabel)
+
+        self.confirmbtn = QPushButton(self)
+        self.confirmbtn.setText("Confirm")
+        self.confirmbtn.clicked.connect(self.restartpr)
+        layout.addWidget(self.confirmbtn)
+
+        self.center()
+
+    def center(self):
+        frameGm = self.frameGeometry()
+        screen = QApplication.desktop().screenNumber(QApplication.desktop().cursor().pos())
+        centerPoint = QApplication.desktop().screenGeometry(screen).center()
+        frameGm.moveCenter(centerPoint)
+        self.move(frameGm.topLeft())
+
+    def restartpr(self):
+        os.execl(sys.executable, sys.executable, *sys.argv)
+
+class FileExistsWindow(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
+
+    def initUI(self):
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+
+        self.namelabel = QLabel("File does not exist.")
+        layout.addWidget(self.namelabel)
+
+        self.confirmbtn = QPushButton(self)
+        self.confirmbtn.setText("Close")
+        self.confirmbtn.clicked.connect(lambda:self.close())
+        layout.addWidget(self.confirmbtn)
+
+        self.center()
 
     def center(self):
         frameGm = self.frameGeometry()
@@ -236,7 +284,6 @@ class MyWindow(QWidget):
         self.move(frameGm.topLeft())
 
 
-
 # pyqt
 def mwindow():
     app = QApplication(sys.argv)
@@ -244,153 +291,3 @@ def mwindow():
     sys.exit(app.exec_())
 
 mwindow()
-
-"""
-while True:
-    print("What would you like to do?")
-    print("- Backup local save (1)")
-    print("- Import backup to game (2)")
-    print("- Exit (0)")
-    print("?: ", end='')
-    menu_choice = input("")
-
-    if menu_choice == "1":
-
-        # 1. Detection of save location
-        if os.path.exists(default_save_location):
-            print('Local save is detected.')
-            save_location = default_save_location
-        else:
-            while True:
-                print('Local save is not detected. Where is your save located?')
-                custom_save_location = input("")
-                print("Is this path correct?" + "'" + str(custom_save_location) + "'" + "(y/n)")
-                save_confirmation = input("")
-                if save_confirmation == "y":
-                    print("Confirmed.")
-                    save_location = custom_save_location
-                    break
-                if save_confirmation == "n":
-                    print("Okay. Feel free to change the directory.")
-                else:
-                    continue
-        
-        # 2. Give user option to rename 
-        print("What would you like to name the save backup?")
-        print("Name: ", end='')
-        backup_name = input("")
-
-
-        # 3. Create a folder called rawsaves in cache
-        os.mkdir("./cache/rawsaves/") 
-
-        # 4. Copy the save files in the rawsaves folder
-        shutil.copy(save_location + "CCGameManager.dat", "./cache/rawsaves/")
-        shutil.copy(save_location + "CCGameManager2.dat", "./cache/rawsaves/")
-        shutil.copy(save_location + "CCLocalLevels.dat", "./cache/rawsaves/")
-        shutil.copy(save_location + "CCLocalLevels2.dat", "./cache/rawsaves/")
-
-        # 5. Zip the rawsaves folder
-        shutil.make_archive('./cache/rawsaves', 'zip', './cache/rawsaves')
-
-        # 6. Rename the rawsaves.zip folder into backup_name.
-        os.rename("./cache/rawsaves.zip", "./backups/" + backup_name + ".gdsave")
-
-        # 7. Remove the rawsaves folder
-        shutil.rmtree("./cache/rawsaves")
-
-        # 8. Check if the file has successfully been created. If true, confirm.
-        if os.path.exists( "./backups/" + backup_name + ".gdsave"):
-            print("Save has successfully been backed up!")
-        else:
-            print("Backup failed to create!")
-
-
-        time.sleep(3)
-
-        
-    
-    elif menu_choice == "2":
-
-        print("Note: Make sure that you have backed up your current save already, as this WILL overwrite whatever save the game is using right now.")
-        print("Proceed? (y/n)")
-        proceed_choice = input("")
-
-        if proceed_choice == "y":
-
-
-            # 1. Detection of save location
-            if os.path.exists(default_save_location):
-                print('Local save is detected.')
-                save_location = default_save_location
-            else:
-                while True:
-                    print('Local save is not detected. Where is your save located?')
-                    custom_save_location = input("")
-                    print("Is this path correct?" + "'" + str(custom_save_location) + "'" + "(y/n)")
-                    save_confirmation = input("")
-                    if save_confirmation == "y":
-                        print("Confirmed.")
-                        save_location = custom_save_location
-                        break
-                    if save_confirmation == "n":
-                        print("Okay. Feel free to change the directory.")
-                    else:
-                        continue
-            
-            # 2. User chooses a save file in ./backups/
-
-            while True:
-    
-                print("What save would you like to import?")
-                for value in saves_list:
-                    print("- '" + value + "'")
-                print("")
-            
-                save_choice = input("")
-
-                # 3. Grab the file with save_choice. Loop the code if the save does not exist
-                if os.path.exists("./backups/" + save_choice + ".gdsave"):
-                    print("yay you have the save")
-                    break
-                else:
-                    print("Save does not exist. Try again.")
-                    time.sleep(1)
-                    continue
-
-            # 3. Copy the file in cache, and rename the file extension part of the backup from gdsave to zip
-            shutil.copy("./backups/" + save_choice + ".gdsave", "./cache/")
-            os.rename("./cache/" + save_choice + ".gdsave", "./cache/import.zip")
-
-            # 4. Unzip the .zip in ./cache/
-            os.mkdir("./cache/import") 
-            shutil.unpack_archive("./cache/import.zip", './cache/import', 'zip')  
-
-            # 5. Remove the old save contents from the Geometry Dash save_location
-            if os.path.exists(save_location + "CCGameManager.dat") and os.path.exists(save_location + "CCLocalLevels.dat"):
-                os.remove(save_location + "CCGameManager.dat")
-                os.remove(save_location + "CCLocalLevels.dat")
-            else:
-                print("The files do not exist. Continuing.")
-                time.sleep(2)
-            
-            # 6. Copy the unzipped save contents into the Geometry Dash save_location
-
-            shutil.copy("./cache/import/CCGameManager.dat", save_location)
-            shutil.copy("./cache/import/CCLocalLevels.dat", save_location)
-            
-            # 7. Remove all the contents in ./cache/
-
-            shutil.rmtree("./cache/import")
-            os.remove("./cache/import.zip")
-
-            # 8. Check if the file has successfully been created. If true, confirm.
-            if os.path.exists(save_location + "CCGameManager.dat") and os.path.exists(save_location + "CCLocalLevels.dat"):
-                print("Save has successfully been imported!")
-            else:
-                print("Backup failed to import!")
-
-            time.sleep(3)
-    elif menu_choice == "0":
-        break
-"""
