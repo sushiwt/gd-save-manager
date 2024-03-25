@@ -266,7 +266,7 @@ class FileExistsWindow(QWidget):
         layout = QVBoxLayout()
         self.setLayout(layout)
 
-        self.namelabel = QLabel("File does not exist.")
+        self.namelabel = QLabel("Save does not exist.")
         layout.addWidget(self.namelabel)
 
         self.confirmbtn = QPushButton(self)
@@ -282,7 +282,6 @@ class FileExistsWindow(QWidget):
         centerPoint = QApplication.desktop().screenGeometry(screen).center()
         frameGm.moveCenter(centerPoint)
         self.move(frameGm.topLeft())
-
 
 # pyqt
 def mwindow():
