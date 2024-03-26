@@ -45,7 +45,10 @@ class MyWindow(QWidget):
 
         self.listWidget = QListWidget()
         for value in saves_list:
-            self.listWidget.addItem(value.replace(".gdsave", "", 1))
+            value_size = os.stat('./backups/' + value).st_size
+            value_time = time.ctime(os.path.getctime('./backups/' + value))
+
+            self.listWidget.addItem(value.replace(".gdsave", "", 1) + "  |  " + str(round(value_size / 1000000, 1)) + " MB" + "  |  " + str(value_time))
 
         self.vlayout.addWidget(self.welcome)
 
