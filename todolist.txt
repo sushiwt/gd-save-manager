@@ -1,0 +1,11 @@
+1. adding ability to extract and inject levels from saves (point of save_decrypter and encrypter (soon))
+
+2. adding ability to see if a save needs to be backed up or not by looking at if the save has changed
+    after importing the save to game:
+    - copy the currently imported to game dat files to ./current folder where it can stay
+
+    when the application is opened:
+    - check if the game data and ./current folder game data are the exact same
+    - change the label depending of if they are the exact same or not
+        - if not, change the label to "The save files have been changed. Back them up if necessary."
+        - if they are, change the label to "The save files are backed up."
