@@ -1,7 +1,11 @@
-import base64,zlib,os
+import base64,zlib,os,struct
 
-# decrypter code stolen from https://pastebin.com/JakxXUVG by Absolute Gamer
-saves = ['CCGameManager.dat','CCLocalLevels.dat']
+# decrypter code is stolen from https://pastebin.com/JakxXUVG by Absolute Gamer
+# encrypter code is also stolen from https://github.com/WEGFan/Geometry-Dash-Savefile-Editor/ by WEGFan
+
+# i'm not smart enough for this shi im sorry :sob:
+
+saves = ['CCLocalLevels2.dat']
  
 def Xor(path,key):
     fr = open(path,'rb')
@@ -15,12 +19,12 @@ def Xor(path,key):
  
 def Decrypt(data):
     return zlib.decompress(base64.b64decode(data.replace('-','+').replace('_','/').encode())[10:],-zlib.MAX_WBITS)
- 
-for x in range(2):
-    fPath = "/home/sushiwt/AppData/Local/GeometryDash/"
-    res = Xor(fPath+saves[x],11)
-    fin = Decrypt(res)
- 
-    fw = open(saves[x]+'.txt','wb')
-    fw.write(fin)
-    fw.close()
+
+
+fPath = "./backups/Dummy/"
+res = Xor(fPath+saves[0],11)
+fin = Decrypt(res)
+
+fw = open('./decrypted/' + saves[0] +'.xml','wb')
+fw.write(fin)
+fw.close()

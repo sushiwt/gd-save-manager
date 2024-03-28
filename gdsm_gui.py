@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QHB
 
 # variables needed for the backup/import process 
 saves_list = os.listdir("./backups/") 
-default_save_location = os.path.expanduser("~/AppData/Local/GeometryDah/")
+default_save_location = os.path.expanduser("~/AppData/Local/GeometryDash/")
 default_save_location_linux = os.path.expanduser("~/.local/share/Steam/steamapps/compatdata/322170/pfx/drive_c/users/steamuser/AppData/Local/GeometryDash/")
 save_location = ""
 save_choice = ""
@@ -40,15 +40,22 @@ class MyWindow(QWidget):
         self.b1.clicked.connect(self.backupbtn)
 
         self.b2 = QPushButton(self)
-        self.b2.setText("Import Backup to Game")
+        self.b2.setText("Import to Game")
         self.b2.clicked.connect(self.importbtn)
 
         self.listWidget = QListWidget()
         for value in saves_list:
             value_size = os.stat('./backups/' + value).st_size
             value_time = time.ctime(os.path.getctime('./backups/' + value))
+            value_size_printed = ""
 
-            self.listWidget.addItem(value.replace(".gdsave", "", 1) + "  |  " + str(round(value_size / 1000000, 1)) + " MB" + "  |  " + str(value_time))
+            if value_size < 1000000:
+                value_size_printed = "< 1"
+            else:
+                value_size_printed = round(os.stat('./backups/' + value).st_size / 1000000, 1)
+
+
+            self.listWidget.addItem(value.replace(".gdsave", "", 1) + "  |  " + str(value_size_printed) + " MB" + "  |  " + str(value_time))
 
         self.vlayout.addWidget(self.welcome)
 
