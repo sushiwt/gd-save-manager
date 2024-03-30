@@ -2,13 +2,29 @@ import os
 import shutil
 import sys
 import time
+import json
 from PyQt5 import QtCore
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QListWidget, QLabel, QLineEdit,QGroupBox
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QListWidget, QLabel, QLineEdit, QGroupBox, QCheckBox
+
+saves = ['CCGameManager.dat', 'CCLocalLevels.dat']
+backup_saves = ['CCGameManager2.dat', 'CCLocalLevels2.dat']
+
+# save file locations based on os
+default_save_location = ""
+
+if sys.platform == "win32":
+    default_save_location = os.path.expanduser("~/AppData/Local/GeometryDash/")
+elif sys.platform == "darwin":
+    default_save_location = os.path.expanduser("~/Library/Application Support/GeometryDash/")
+elif sys.platform == "linux" or sys.platform == "linux2":
+    default_save_location = os.path.expanduser("~/.local/share/Steam/steamapps/compatdata/322170/pfx/drive_c/users/steamuser/AppData/Local/GeometryDash/")
+
+# settings json files
+settingsjson = open('settings.json', 'r+')
+data = json.load(settingsjson)
 
 # variables needed for the backup/import process 
 saves_list = os.listdir("./backups/") 
-default_save_location = os.path.expanduser("~/AppData/Local/GeometryDash/")
-default_save_location_linux = os.path.expanduser("~/.local/share/Steam/steamapps/compatdata/322170/pfx/drive_c/users/steamuser/AppData/Local/GeometryDash/")
 save_location = ""
 save_choice = ""
 
@@ -31,6 +47,13 @@ class MyWindow(QWidget):
         self.welcome.setText("Welcome to the Geometry Dash Save File Manager! \n\nA program that automates backing your CCGameManager and CCLocalLevels up for you in a neat gdsave (zip) file.")
         self.welcome.setWordWrap(True)
 
+        self.savechangedlabel = QLabel(self)
+
+        if data["ccgm"] == os.stat(default_save_location + 'CCGameManager.dat').st_size and data["ccll"] == os.stat(default_save_location + 'CCLocalLevels.dat').st_size:
+            self.savechangedlabel.setText("The save files are backed up.")
+        else:
+            self.savechangedlabel.setText("The save file" + data["currentbackup"] + " has been changed. \nBack them up if necessary.")
+        
         self.madeby = QLabel(self)
         self.madeby.setText("made by sushiwt, 2024     Geometry Dash belongs to RobTop")
         self.madeby.setAlignment(QtCore.Qt.AlignCenter)
@@ -58,6 +81,7 @@ class MyWindow(QWidget):
             self.listWidget.addItem(value.replace(".gdsave", "", 1) + "  |  " + str(value_size_printed) + " MB" + "  |  " + str(value_time))
 
         self.vlayout.addWidget(self.welcome)
+        self.vlayout.addWidget(self.savechangedlabel)
 
         self.vlayout.addWidget(groupbox)
         savegroupbox.addWidget(self.listWidget)
@@ -99,13 +123,13 @@ class BackupWindow(QWidget):
         self.savedetectlabel.setWordWrap(True)
 
         if os.path.exists(default_save_location):
-            self.savedetectlabel.setText("Local save (Windows) is detected. \n" + default_save_location + "\nYou don't have to input your custom path.")
-        elif os.path.exists(default_save_location_linux):
-            self.savedetectlabel.setText("Local save (Linux) is detected. \n" + default_save_location_linux + "\nYou don't have to input your custom path.")
+            self.savedetectlabel.setText("Local save is detected. \n" + default_save_location + "\nYou don't have to input your custom path.")
         else:
             self.savedetectlabel.setText("Local save is not detected. \nWhat path are your saves in?")
             self.customsavepath = QLineEdit(self)
             layout.addWidget(self.customsavepath)
+
+        self.backupcheckbox = QCheckBox('Include the game backup files')
 
         self.namelabel = QLabel("What would you like to name the save backup?")
         self.savname = QLineEdit(self)
@@ -116,6 +140,7 @@ class BackupWindow(QWidget):
         
         layout.addWidget(self.savedetectlabel)
         layout.addWidget(self.namelabel)
+        layout.addWidget(self.backupcheckbox)
 
         layout.addLayout(altlayout)
         altlayout.addWidget(self.savname)
@@ -126,17 +151,23 @@ class BackupWindow(QWidget):
     def backupsave(self):
         if os.path.exists(default_save_location):
             save_location = default_save_location
-        elif os.path.exists(default_save_location_linux):
-            save_location = default_save_location_linux
         else:
             save_location = self.customsavepath.text()
 
         os.mkdir("./cache/rawsaves/") 
 
-        shutil.copy(save_location + "CCGameManager.dat", "./cache/rawsaves/")
-        shutil.copy(save_location + "CCGameManager2.dat", "./cache/rawsaves/")
-        shutil.copy(save_location + "CCLocalLevels.dat", "./cache/rawsaves/")
-        shutil.copy(save_location + "CCLocalLevels2.dat", "./cache/rawsaves/")
+        for x in range(2):
+            shutil.copy(save_location + saves[x], "./cache/rawsaves/")
+
+            if self.backupcheckbox.isChecked():
+                shutil.copy(save_location + backup_saves[x], "./cache/rawsaves/")
+
+        data['currentbackup'] = self.savname.text()
+        data['ccgm'] = os.stat('./cache/rawsaves/' + saves[0]).st_size 
+        data['ccll'] = os.stat('./cache/rawsaves/' + saves[1]).st_size
+        settingsjson.seek(0)
+        json.dump(data, settingsjson, indent=4)
+        settingsjson.truncate()
 
         shutil.make_archive('./cache/rawsaves', 'zip', './cache/rawsaves')
 
@@ -174,9 +205,7 @@ class ImportWindow(QWidget):
         self.savedetectlabel.setWordWrap(True)
 
         if os.path.exists(default_save_location):
-            self.savedetectlabel.setText("Local save (Windows) is detected. \n" + default_save_location + "\nYou don't have to input your custom path.")
-        elif os.path.exists(default_save_location_linux):
-            self.savedetectlabel.setText("Local save (Linux) is detected. \n" + default_save_location_linux + "\nYou don't have to input your custom path.")
+            self.savedetectlabel.setText("Local save is detected. \n" + default_save_location + "\nYou don't have to input your custom path.")
         else:
             self.savedetectlabel.setText("Local save is not detected. \nWhat path are your saves in?")
             self.customsavepath = QLineEdit(self)
@@ -208,8 +237,6 @@ class ImportWindow(QWidget):
         if os.path.exists("./backups/" + self.savname.text() + ".gdsave"):
             if os.path.exists(default_save_location):
                 save_location = default_save_location
-            elif os.path.exists(default_save_location_linux):
-                save_location = default_save_location_linux
             else:
                 save_location = self.customsavepath.text()
 
@@ -305,7 +332,6 @@ class FileExistsWindow(QWidget):
         frameGm.moveCenter(centerPoint)
         self.move(frameGm.topLeft())
 
-# pyqt
 def mwindow():
     app = QApplication(sys.argv)
     window = MyWindow()

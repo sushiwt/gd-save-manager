@@ -1,6 +1,12 @@
 1. adding ability to extract and inject levels from saves (point of save_decrypter and encrypter (soon))
 
-2. adding ability to see if a save needs to be backed up or not by looking at if the save has changed
+
+
+
+
+(done :33) adding ability to see if a save needs to be backed up or not by looking at if the save has changed
+    (changed it so that it only views the file size instead, saving tons of space)
+    
     after importing the save to game:
     - copy the currently imported to game dat files to ./current folder where it can stay
 
