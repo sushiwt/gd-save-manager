@@ -49,10 +49,7 @@ class MyWindow(QWidget):
 
         self.savechangedlabel = QLabel(self)
 
-        if data["ccgm"] == os.stat(default_save_location + 'CCGameManager.dat').st_size and data["ccll"] == os.stat(default_save_location + 'CCLocalLevels.dat').st_size:
-            self.savechangedlabel.setText("The save files are backed up.")
-        else:
-            self.savechangedlabel.setText("The save file " + '"' + data["currentbackup"] + '"' + " has been changed. \nBack them up if necessary.")
+        self.savechangedlabel.setText("The save file " + '"' + data["currentbackup"] + '"' + " has been changed. \nBack them up if necessary.")
         
         self.madeby = QLabel(self)
         self.madeby.setText("made by sushiwt, 2024     Geometry Dash belongs to RobTop")
